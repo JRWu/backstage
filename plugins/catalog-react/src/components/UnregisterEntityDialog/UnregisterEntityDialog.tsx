@@ -221,39 +221,8 @@ const Contents = ({
           >
             {t('unregisterEntityDialog.unregisterState.unregisterButtonTitle')}
           </Button>
-          {!showDelete && (
-            <Box component="span" marginLeft={2}>
-              <Button
-                variant="text"
-                size="small"
-                color="primary"
-                className={classes.advancedButton}
-                onClick={() => setShowDelete(true)}
-              >
-                {t('unregisterEntityDialog.unregisterState.advancedOptions')}
-              </Button>
-            </Box>
-          )}
         </Box>
-
-        {showDelete && (
-          <>
-            <Box paddingTop={4} paddingBottom={4}>
-              <Divider />
-            </Box>
-            <DialogContentText>
-              {t('unregisterEntityDialog.unregisterState.advancedDescription')}
-            </DialogContentText>
-            <Button
-              variant="contained"
-              color="secondary"
-              disabled={busy}
-              onClick={onDelete}
-            >
-              {t('unregisterEntityDialog.deleteButtonTitle')}
-            </Button>
-          </>
-        )}
+        <DialogActionsPanel />
       </>
     );
   }
