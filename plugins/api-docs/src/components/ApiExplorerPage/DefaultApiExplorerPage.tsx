@@ -43,6 +43,7 @@ import { usePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { useTranslationRef } from '@backstage/frontend-plugin-api';
 import { apiDocsTranslationRef } from '../../translation';
+import { ApiEndpointSearchBar } from '../ApiEndpointSearchBar';
 
 const defaultColumns: TableColumn<CatalogTableRow>[] = [
   CatalogTable.columns.createTitleColumn({ hidden: true }),
@@ -120,6 +121,7 @@ export const DefaultApiExplorerPage = (props: DefaultApiExplorerPageProps) => {
               <EntityTagPicker />
             </CatalogFilterLayout.Filters>
             <CatalogFilterLayout.Content>
+              <ApiEndpointSearchBar />
               <CatalogTable
                 columns={columns || defaultColumns}
                 actions={actions}

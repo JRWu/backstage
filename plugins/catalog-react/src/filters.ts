@@ -24,6 +24,7 @@ import { AlphaEntity } from '@backstage/catalog-model/alpha';
 import { EntityFilter, UserListFilterKind } from './types';
 import { getEntityRelations } from './utils/getEntityRelations';
 import { EntityOrderQuery } from '@backstage/catalog-client';
+import yaml from 'yaml';
 
 /**
  * Filter entities based on Kind.
@@ -346,5 +347,52 @@ export class EntityOrderFilter implements EntityFilter {
 
   toQueryValue(): string[] {
     return this.values.flat();
+  }
+}
+
+/**
+ * Filters API entities based on endpoint paths in their OpenAPI definitions.
+ * @public
+ */
+export class EntityApiEndpointFilter implements EntityFilter {
+  constructor(readonly value: string) {}
+
+  getCatalogFilters(): Record<string, string | string[]> {
+    return {};
+  }
+
+  toQueryValue(): string {
+    return this.value;
+  }
+
+  filterEntity(entity: Entity): boolean {
+    if (entity.kind !== 'API') {
+      return false;
+    }
+
+    const definition = entity.spec?.definition;
+    if (!definition || typeof definition !== 'string') {
+      return false;
+    }
+
+    try {
+      let spec: any;
+      try {
+        spec = JSON.parse(definition);
+      } catch {
+        spec = yaml.parse(definition);
+      }
+
+      if (!spec?.paths) {
+        return false;
+      }
+
+      const searchQuery = this.value.toLowerCase();
+      return Object.keys(spec.paths).some(path =>
+        path.toLowerCase().includes(searchQuery),
+      );
+    } catch {
+      return false;
+    }
   }
 }
