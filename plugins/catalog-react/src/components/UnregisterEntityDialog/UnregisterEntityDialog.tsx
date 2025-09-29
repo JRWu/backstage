@@ -106,6 +106,30 @@ const Contents = ({
     [alertApi, onConfirm, state, entity, t],
   );
 
+  const onDeleteFromFilesystem = useCallback(
+    async function onDeleteFromFilesystemFn() {
+      if ('deleteFromFilesystem' in state && state.deleteFromFilesystem) {
+        setBusy(true);
+        try {
+          await state.deleteFromFilesystem();
+          const entityName = entity.metadata.title ?? entity.metadata.name;
+          onConfirm();
+          alertApi.post({
+            message: `Entity ${entityName} deleted from filesystem successfully`,
+            severity: 'success',
+            display: 'transient',
+          });
+        } catch (err) {
+          assertError(err);
+          alertApi.post({ message: err.message });
+        } finally {
+          setBusy(false);
+        }
+      }
+    },
+    [alertApi, onConfirm, state, entity],
+  );
+
   const DialogActionsPanel = () => (
     <DialogActions className={classes.dialogActions}>
       <Button onClick={onClose} color="primary">
@@ -183,6 +207,24 @@ const Contents = ({
         >
           {t('unregisterEntityDialog.deleteButtonTitle')}
         </Button>
+        {'deleteFromFilesystem' in state && state.deleteFromFilesystem && (
+          <>
+            <Box paddingTop={2} />
+            <DialogContentText>
+              Warning: This will permanently delete the source file from the
+              filesystem and remove references from parent Location entities.
+              This action cannot be undone.
+            </DialogContentText>
+            <Button
+              variant="contained"
+              color="secondary"
+              disabled={busy}
+              onClick={onDeleteFromFilesystem}
+            >
+              Delete from Filesystem
+            </Button>
+          </>
+        )}
         <DialogActionsPanel />
       </>
     );
@@ -252,6 +294,26 @@ const Contents = ({
             >
               {t('unregisterEntityDialog.deleteButtonTitle')}
             </Button>
+            {'deleteFromFilesystem' in state && state.deleteFromFilesystem && (
+              <>
+                <Box paddingTop={2} paddingBottom={2}>
+                  <Divider />
+                </Box>
+                <DialogContentText>
+                  Warning: This will permanently delete the source file from the
+                  filesystem and remove references from parent Location
+                  entities. This action cannot be undone.
+                </DialogContentText>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  disabled={busy}
+                  onClick={onDeleteFromFilesystem}
+                >
+                  Delete from Filesystem
+                </Button>
+              </>
+            )}
           </>
         )}
       </>

@@ -24,16 +24,20 @@ import {
 import {
   ANNOTATION_LOCATION,
   ANNOTATION_ORIGIN_LOCATION,
+  ANNOTATION_SOURCE_LOCATION,
   Entity,
   parseLocationRef,
   stringifyEntityRef,
 } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
-import { InputError, serializeError } from '@backstage/errors';
+import { InputError, serializeError, NotFoundError } from '@backstage/errors';
 import { LocationAnalyzer } from '@backstage/plugin-catalog-node';
 import express from 'express';
 import yn from 'yn';
 import { z } from 'zod';
+import fs from 'fs-extra';
+import path from 'path';
+import yaml from 'yaml';
 import { Cursor, EntitiesCatalog } from '../catalog/types';
 import { CatalogProcessingOrchestrator } from '../processing/types';
 import { validateEntityEnvelope } from '../processing/util';
@@ -515,6 +519,308 @@ export async function createRouter(
         }
       });
   }
+
+  (router as any).delete(
+    '/entities/by-ref/:kind/:namespace/:name/delete-filesystem',
+    async (req: express.Request, res: express.Response) => {
+      const { kind, namespace, name } = req.params as {
+        kind: string;
+        namespace: string;
+        name: string;
+      };
+
+      const auditorEvent = await auditor.createEvent({
+        eventId: 'entity-mutate',
+        severityLevel: 'high',
+        request: req,
+        meta: {
+          actionType: 'delete-filesystem',
+          kind,
+          namespace,
+          name,
+        },
+      });
+
+      try {
+        disallowReadonlyMode(readonlyEnabled);
+
+        logger.info(
+          `[DELETE-FS] Starting filesystem deletion for ${kind}:${namespace}/${name}`,
+        );
+
+        const { items } = await entitiesCatalog!.entitiesBatch({
+          entityRefs: [stringifyEntityRef({ kind, namespace, name })],
+          credentials: await httpAuth.credentials(req),
+        });
+
+        let entity: Entity;
+        if (items.type === 'object') {
+          if (!items.entities[0]) {
+            throw new NotFoundError(
+              `Entity ${kind}:${namespace}/${name} not found`,
+            );
+          }
+          entity = items.entities[0];
+        } else {
+          if (!items.entities[0]) {
+            throw new NotFoundError(
+              `Entity ${kind}:${namespace}/${name} not found`,
+            );
+          }
+          entity = JSON.parse(items.entities[0]);
+        }
+
+        logger.info(`[DELETE-FS] Found entity: ${entity.metadata.name}`);
+        logger.info(
+          `[DELETE-FS] Annotations: ${JSON.stringify(
+            entity.metadata.annotations,
+          )}`,
+        );
+
+        const sourceLocation =
+          entity.metadata?.annotations?.[ANNOTATION_SOURCE_LOCATION] ??
+          entity.metadata?.annotations?.[ANNOTATION_LOCATION];
+
+        if (!sourceLocation) {
+          throw new InputError(
+            'Entity does not have a source or managed-by location',
+          );
+        }
+
+        const { type, target } = parseLocationRef(sourceLocation);
+
+        if (type !== 'file') {
+          throw new InputError(
+            `Filesystem deletion is only supported for file-based locations, got type: ${type}`,
+          );
+        }
+
+        let filePath: string | undefined;
+
+        const resolvedLocationPath = path.isAbsolute(target)
+          ? target
+          : path.resolve(target);
+
+        if (await fs.pathExists(resolvedLocationPath)) {
+          const locationYaml = await fs.readFile(resolvedLocationPath, 'utf-8');
+          const locationDoc = yaml.parseDocument(locationYaml);
+          const locationKind = String(locationDoc.get('kind'));
+
+          if (locationKind === 'Location') {
+            const locationSpec = locationDoc.get('spec') as
+              | yaml.YAMLMap
+              | undefined;
+            const targetsNode = locationSpec?.get('targets') as
+              | yaml.YAMLSeq
+              | undefined;
+
+            if (!targetsNode || !targetsNode.items) {
+              throw new InputError('Location has no targets');
+            }
+
+            const locationDir = path.dirname(resolvedLocationPath);
+
+            for (const targetNode of targetsNode.items) {
+              if (targetNode === null) continue;
+
+              const targetValue =
+                typeof targetNode === 'object' && 'value' in targetNode
+                  ? targetNode.value
+                  : targetNode;
+
+              if (typeof targetValue !== 'string') continue;
+
+              const resolvedPath = targetValue.startsWith('.')
+                ? path.resolve(locationDir, targetValue)
+                : path.resolve(targetValue);
+
+              if (await fs.pathExists(resolvedPath)) {
+                const componentYaml = await fs.readFile(resolvedPath, 'utf-8');
+                const componentDoc = yaml.parseDocument(componentYaml);
+                const componentKind = String(componentDoc.get('kind'));
+                const componentMetadata = componentDoc.get('metadata') as
+                  | yaml.YAMLMap
+                  | undefined;
+                const componentNamespace = String(
+                  componentMetadata?.get('namespace') || 'default',
+                );
+                const componentName = String(componentMetadata?.get('name'));
+
+                if (
+                  componentKind === entity.kind &&
+                  componentNamespace ===
+                    (entity.metadata.namespace || 'default') &&
+                  componentName === entity.metadata.name
+                ) {
+                  filePath = resolvedPath;
+                  break;
+                }
+              }
+            }
+
+            if (!filePath) {
+              throw new InputError(
+                'Could not find component source file in Location targets',
+              );
+            }
+          } else {
+            filePath = resolvedLocationPath;
+          }
+        } else {
+          throw new InputError(
+            `Source location file does not exist: ${resolvedLocationPath}`,
+          );
+        }
+
+        logger.info(`[DELETE-FS] Component file path: ${filePath}`);
+
+        const componentDir = path.dirname(filePath);
+        const searchRoot = path.dirname(componentDir); // Go up one level
+
+        logger.info(
+          `[DELETE-FS] Searching for Location YAML files in: ${searchRoot}`,
+        );
+
+        const locationsToUpdate: Array<{ filePath: string }> = [];
+
+        const findYamlFiles = async (dir: string): Promise<string[]> => {
+          const entries = await fs.readdir(dir, { withFileTypes: true });
+          const files = await Promise.all(
+            entries.map(async entry => {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                return findYamlFiles(fullPath);
+              } else if (
+                entry.isFile() &&
+                (entry.name.endsWith('.yaml') || entry.name.endsWith('.yml'))
+              ) {
+                return [fullPath];
+              }
+              return [];
+            }),
+          );
+          return files.flat();
+        };
+
+        const yamlFiles = await findYamlFiles(searchRoot);
+        logger.info(
+          `[DELETE-FS] Found ${yamlFiles.length} YAML files to check`,
+        );
+
+        for (const yamlFile of yamlFiles) {
+          try {
+            const content = await fs.readFile(yamlFile, 'utf-8');
+            const doc = yaml.parseDocument(content);
+
+            const locationKind = doc.get('kind');
+            if (locationKind !== 'Location') {
+              continue;
+            }
+
+            const spec = doc.get('spec') as yaml.YAMLMap | undefined;
+            if (!spec) continue;
+
+            const targets = spec.get('targets') as yaml.YAMLSeq | undefined;
+            if (!targets) continue;
+
+            const yamlFileDir = path.dirname(yamlFile);
+
+            for (const item of targets.items) {
+              if (item === null) continue;
+              const targetValue =
+                typeof item === 'object' && 'value' in item ? item.value : item;
+              if (typeof targetValue !== 'string') continue;
+
+              const resolvedTarget = targetValue.startsWith('.')
+                ? path.resolve(yamlFileDir, targetValue)
+                : path.resolve(targetValue);
+
+              logger.info(
+                `[DELETE-FS] Checking ${yamlFile}: target ${targetValue} -> ${resolvedTarget}`,
+              );
+
+              if (resolvedTarget === filePath) {
+                logger.info(`[DELETE-FS] MATCH FOUND in ${yamlFile}`);
+                locationsToUpdate.push({ filePath: yamlFile });
+                break;
+              }
+            }
+          } catch (err) {
+            logger.debug(`[DELETE-FS] Failed to parse ${yamlFile}: ${err}`);
+          }
+        }
+
+        logger.info(
+          `[DELETE-FS] Locations to update: ${locationsToUpdate.length}`,
+        );
+
+        for (const { filePath: locationPath } of locationsToUpdate) {
+          logger.info(`[DELETE-FS] Updating Location file: ${locationPath}`);
+          const yamlContent = await fs.readFile(locationPath, 'utf-8');
+          const doc = yaml.parseDocument(yamlContent);
+
+          const spec = doc.get('spec') as yaml.YAMLMap | undefined;
+          const targetsNode = spec?.get('targets') as yaml.YAMLSeq | undefined;
+
+          if (targetsNode && targetsNode.items) {
+            const locationDir = path.dirname(locationPath);
+            let deletedCount = 0;
+
+            for (let i = targetsNode.items.length - 1; i >= 0; i--) {
+              const item = targetsNode.items[i];
+              if (item === null) continue;
+
+              const targetValue =
+                typeof item === 'object' && 'value' in item ? item.value : item;
+              if (typeof targetValue !== 'string') continue;
+
+              const resolvedTarget = targetValue.startsWith('.')
+                ? path.resolve(locationDir, targetValue)
+                : path.resolve(targetValue);
+
+              logger.info(
+                `[DELETE-FS] Checking target ${i}: ${targetValue} -> ${resolvedTarget}`,
+              );
+
+              if (resolvedTarget === filePath) {
+                logger.info(`[DELETE-FS] Removing target at index ${i}`);
+                targetsNode.delete(i);
+                deletedCount++;
+              }
+            }
+
+            logger.info(
+              `[DELETE-FS] Removed ${deletedCount} targets from ${locationPath}`,
+            );
+            await fs.writeFile(locationPath, doc.toString(), 'utf-8');
+            logger.info(`[DELETE-FS] Successfully updated ${locationPath}`);
+          }
+        }
+
+        logger.info(`[DELETE-FS] Deleting component file: ${filePath}`);
+
+        await fs.remove(filePath);
+
+        await entitiesCatalog!.removeEntityByUid(entity.metadata.uid!, {
+          credentials: await httpAuth.credentials(req),
+        });
+
+        await auditorEvent?.success({
+          meta: {
+            filePath,
+            locationsUpdated: locationsToUpdate.length,
+          },
+        });
+
+        res.status(204).end();
+      } catch (err) {
+        await auditorEvent?.fail({
+          error: err,
+        });
+        throw err;
+      }
+    },
+  );
 
   if (locationService) {
     router
