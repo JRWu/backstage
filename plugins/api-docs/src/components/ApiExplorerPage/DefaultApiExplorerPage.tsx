@@ -37,12 +37,84 @@ import {
   UserListPicker,
   CatalogFilterLayout,
   EntityOwnerPickerProps,
+  useEntityList,
 } from '@backstage/plugin-catalog-react';
 import { registerComponentRouteRef } from '../../routes';
 import { usePermission } from '@backstage/plugin-permission-react';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { useTranslationRef } from '@backstage/frontend-plugin-api';
 import { apiDocsTranslationRef } from '../../translation';
+import { ApiEndpointSearchBar } from '../ApiEndpointSearchBar';
+import Box from '@material-ui/core/Box';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
+import yaml from 'yaml';
+
+const useStyles = makeStyles(
+  theme => ({
+    endpointBox: {
+      border: `2px solid ${theme.palette.error.main}`,
+      backgroundColor: theme.palette.background.paper,
+      padding: theme.spacing(2),
+      margin: theme.spacing(2),
+      borderRadius: theme.shape.borderRadius,
+    },
+    endpointPath: {
+      fontWeight: 'bold',
+      marginBottom: theme.spacing(1),
+    },
+  }),
+  { name: 'DefaultApiExplorerPage' },
+);
+
+function extractMatchedEndpoints(
+  definition: string,
+  searchQuery: string,
+): Array<{ path: string; method: string; description: string }> {
+  try {
+    let spec: any;
+    try {
+      spec = JSON.parse(definition);
+    } catch {
+      spec = yaml.parse(definition);
+    }
+
+    if (!spec?.paths) {
+      return [];
+    }
+
+    const searchLower = searchQuery.toLowerCase();
+    const matchedEndpoints: Array<{
+      path: string;
+      method: string;
+      description: string;
+    }> = [];
+
+    for (const [path, methods] of Object.entries(spec.paths)) {
+      if (path.toLowerCase().includes(searchLower)) {
+        for (const [method, details] of Object.entries(methods as any)) {
+          if (
+            typeof details === 'object' &&
+            details !== null &&
+            ((details as any).description || (details as any).summary)
+          ) {
+            matchedEndpoints.push({
+              path,
+              method: method.toUpperCase(),
+              description:
+                (details as any).description || (details as any).summary || '',
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    return matchedEndpoints;
+  } catch {
+    return [];
+  }
+}
 
 const defaultColumns: TableColumn<CatalogTableRow>[] = [
   CatalogTable.columns.createTitleColumn({ hidden: true }),
@@ -54,6 +126,51 @@ const defaultColumns: TableColumn<CatalogTableRow>[] = [
   CatalogTable.columns.createMetadataDescriptionColumn(),
   CatalogTable.columns.createTagsColumn(),
 ];
+const CatalogTableWithEndpointDetails = (props: {
+  columns: TableColumn<CatalogTableRow>[];
+  actions?: TableProps<CatalogTableRow>['actions'];
+}) => {
+  const classes = useStyles();
+  const { filters } = useEntityList();
+  const endpointFilter = (filters as any).endpoint;
+  const searchQuery = endpointFilter?.value;
+
+  const detailPanel = ({ rowData }: { rowData: CatalogTableRow }) => {
+    if (!searchQuery) return null;
+
+    const entity = rowData.entity;
+    if (entity.kind !== 'API') return null;
+
+    const definition = entity.spec?.definition;
+    if (!definition || typeof definition !== 'string') return null;
+
+    const matchedEndpoints = extractMatchedEndpoints(definition, searchQuery);
+    if (matchedEndpoints.length === 0) return null;
+
+    return (
+      <Box className={classes.endpointBox}>
+        {matchedEndpoints.map((endpoint, idx) => (
+          <Box key={idx} mb={idx < matchedEndpoints.length - 1 ? 2 : 0}>
+            <Typography className={classes.endpointPath}>
+              {endpoint.path}
+            </Typography>
+            <Typography variant="body2">
+              Description: {endpoint.description}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    );
+  };
+
+  return (
+    <CatalogTable
+      columns={props.columns}
+      actions={props.actions}
+      detailPanel={detailPanel}
+    />
+  );
+};
 
 /**
  * DefaultApiExplorerPageProps
@@ -120,7 +237,8 @@ export const DefaultApiExplorerPage = (props: DefaultApiExplorerPageProps) => {
               <EntityTagPicker />
             </CatalogFilterLayout.Filters>
             <CatalogFilterLayout.Content>
-              <CatalogTable
+              <ApiEndpointSearchBar />
+              <CatalogTableWithEndpointDetails
                 columns={columns || defaultColumns}
                 actions={actions}
               />
