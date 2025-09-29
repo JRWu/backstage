@@ -15,11 +15,17 @@
  */
 
 import { makeStyles } from '@material-ui/core/styles';
+import TextField from '@material-ui/core/TextField';
+import Box from '@material-ui/core/Box';
 import { useEffect, useState } from 'react';
 import SwaggerUI, { SwaggerUIProps } from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import yaml from 'js-yaml';
 
 const useStyles = makeStyles(theme => ({
+  searchBox: {
+    marginBottom: theme.spacing(2),
+  },
   root: {
     '& .swagger-ui': {
       fontFamily: theme.typography.fontFamily,
@@ -186,25 +192,70 @@ export const OpenApiDefinition = ({
   ...swaggerUiProps
 }: OpenApiDefinitionProps) => {
   const classes = useStyles();
-
-  // Due to a bug in the swagger-ui-react component, the component needs
-  // to be created without content first.
+  const [searchTerm, setSearchTerm] = useState('');
   const [def, setDef] = useState('');
+  const [filteredDef, setFilteredDef] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setDef(definition), 0);
     return () => clearTimeout(timer);
-  }, [definition, setDef]);
+  }, [definition]);
+
+  useEffect(() => {
+    if (!def || !searchTerm) {
+      setFilteredDef(def);
+      return;
+    }
+
+    try {
+      const spec = yaml.load(def) as any;
+
+      if (spec && spec.paths) {
+        const filteredPaths: { [key: string]: any } = {};
+        const lowerSearchTerm = searchTerm.toLowerCase();
+
+        Object.keys(spec.paths).forEach(path => {
+          if (path.toLowerCase().includes(lowerSearchTerm)) {
+            filteredPaths[path] = spec.paths[path];
+          }
+        });
+
+        const filteredSpec = {
+          ...spec,
+          paths: filteredPaths,
+        };
+
+        setFilteredDef(yaml.dump(filteredSpec));
+      } else {
+        setFilteredDef(def);
+      }
+    } catch (error) {
+      setFilteredDef(def);
+    }
+  }, [def, searchTerm]);
 
   return (
-    <div className={classes.root}>
-      <SwaggerUI
-        spec={def}
-        url=""
-        deepLinking
-        oauth2RedirectUrl={`${window.location.protocol}//${window.location.host}/oauth2-redirect.html`}
-        {...swaggerUiProps}
-      />
+    <div>
+      <Box className={classes.searchBox}>
+        <TextField
+          fullWidth
+          label="Search endpoints"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder="e.g., /api/catalog/refresh"
+        />
+      </Box>
+      <div className={classes.root}>
+        <SwaggerUI
+          spec={filteredDef}
+          url=""
+          deepLinking
+          oauth2RedirectUrl={`${window.location.protocol}//${window.location.host}/oauth2-redirect.html`}
+          {...swaggerUiProps}
+        />
+      </div>
     </div>
   );
 };

@@ -71,6 +71,7 @@
     "graphql": "^16.0.0",
     "graphql-config": "^5.0.2",
     "graphql-ws": "^5.4.1",
+    "js-yaml": "^4.0.0",
     "swagger-ui-react": "^5.27.1"
   },
   "devDependencies": {
@@ -83,6 +84,7 @@
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.0.0",
     "@types/highlightjs": "^10.1.0",
+    "@types/js-yaml": "^4.0.0",
     "@types/react": "^18.0.0",
     "@types/swagger-ui-react": "^4.18.0",
     "react": "^18.0.2",
