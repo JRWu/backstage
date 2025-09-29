@@ -19,11 +19,16 @@ import {
   CompoundEntityRef,
   getCompoundEntityRef,
   ANNOTATION_ORIGIN_LOCATION,
+  parseLocationRef,
 } from '@backstage/catalog-model';
 import { catalogApiRef } from '../../api';
 import { useCallback } from 'react';
 import useAsync from 'react-use/esm/useAsync';
-import { useApi } from '@backstage/core-plugin-api';
+import {
+  useApi,
+  identityApiRef,
+  discoveryApiRef,
+} from '@backstage/core-plugin-api';
 
 /**
  * Each distinct state that the dialog can be in at any given time.
@@ -47,10 +52,12 @@ export type UseUnregisterEntityDialogState =
       colocatedEntities: CompoundEntityRef[];
       unregisterLocation: () => Promise<void>;
       deleteEntity: () => Promise<void>;
+      deleteFromFilesystem?: () => Promise<void>;
     }
   | {
       type: 'only-delete';
       deleteEntity: () => Promise<void>;
+      deleteFromFilesystem?: () => Promise<void>;
     };
 
 /**
@@ -60,6 +67,8 @@ export function useUnregisterEntityDialogState(
   entity: Entity,
 ): UseUnregisterEntityDialogState {
   const catalogApi = useApi(catalogApiRef);
+  const identityApi = useApi(identityApiRef);
+  const discoveryApi = useApi(discoveryApiRef);
   const locationRef = entity.metadata.annotations?.[ANNOTATION_ORIGIN_LOCATION];
   const uid = entity.metadata.uid;
   const isBootstrap = locationRef === 'bootstrap:bootstrap';
@@ -114,6 +123,32 @@ export function useUnregisterEntityDialogState(
     [catalogApi, uid],
   );
 
+  const deleteFromFilesystem = useCallback(
+    async function deleteFromFilesystemFn() {
+      const { token } = await identityApi.getCredentials();
+      const baseUrl = await discoveryApi.getBaseUrl('catalog');
+      const kind = entity.kind;
+      const namespace = entity.metadata.namespace || 'default';
+      const name = entity.metadata.name;
+      const response = await fetch(
+        `${baseUrl}/entities/by-ref/${encodeURIComponent(
+          kind,
+        )}/${encodeURIComponent(namespace)}/${encodeURIComponent(
+          name,
+        )}/delete-filesystem`,
+        {
+          method: 'DELETE',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        },
+      );
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to delete from filesystem: ${error}`);
+      }
+    },
+    [discoveryApi, identityApi, entity],
+  );
+
   // If this is a bootstrap location entity, don't even block on loading
   // prerequisites. We know that all that we will do is to offer to remove the
   // entity, and that doesn't require anything from the prerequisites.
@@ -130,8 +165,16 @@ export function useUnregisterEntityDialogState(
   }
 
   const { location, colocatedEntities } = value!;
+
+  const isFileLocation =
+    locationRef && parseLocationRef(locationRef).type === 'file';
+
   if (!location) {
-    return { type: 'only-delete', deleteEntity };
+    return {
+      type: 'only-delete',
+      deleteEntity,
+      deleteFromFilesystem: isFileLocation ? deleteFromFilesystem : undefined,
+    };
   }
   return {
     type: 'unregister',
@@ -139,5 +182,6 @@ export function useUnregisterEntityDialogState(
     colocatedEntities: colocatedEntities.map(getCompoundEntityRef),
     unregisterLocation,
     deleteEntity,
+    deleteFromFilesystem: isFileLocation ? deleteFromFilesystem : undefined,
   };
 }
