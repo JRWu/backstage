@@ -29,6 +29,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { ReactNode, useState, useEffect } from 'react';
 import { apiDocsConfigRef } from '../../config';
 import { PlainApiDefinitionWidget } from '../PlainApiDefinitionWidget';
+import { ApiDiffWidget } from '../ApiDiffWidget';
 import { useTranslationRef } from '@backstage/frontend-plugin-api';
 import { apiDocsTranslationRef } from '../../translation';
 
@@ -152,6 +153,7 @@ export function ApiDefinitionDialog(props: {
             <Tab label={definitionWidget.title} {...a11yProps(tabIndex++)} />
           ) : null}
           <Tab label="Raw" {...a11yProps(tabIndex++)} />
+          <Tab label="Diff" {...a11yProps(tabIndex++)} />
         </Tabs>
 
         {definitionWidget ? (
@@ -164,6 +166,9 @@ export function ApiDefinitionDialog(props: {
             definition={entity.spec.definition}
             language={definitionWidget?.rawLanguage ?? entity.spec.type}
           />
+        </TabPanel>
+        <TabPanel value={activeTab} index={tabPanelIndex++}>
+          <ApiDiffWidget currentDefinition={entity.spec.definition} />
         </TabPanel>
       </DialogContent>
       <DialogActions>
