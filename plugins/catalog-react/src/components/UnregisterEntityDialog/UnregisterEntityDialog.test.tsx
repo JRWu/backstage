@@ -277,6 +277,7 @@ describe('UnregisterEntityDialog', () => {
       ).toBeInTheDocument();
       expect(screen.getByText(/ns1\/n1/)).toBeInTheDocument();
       expect(screen.getByText(/ns2\/n2/)).toBeInTheDocument();
+      expect(screen.queryByText('Advanced Options')).not.toBeInTheDocument();
     });
 
     await userEvent.click(screen.getByText('Unregister Location'));
@@ -284,67 +285,7 @@ describe('UnregisterEntityDialog', () => {
     await waitFor(() => {
       expect(unregisterLocation).toHaveBeenCalled();
       expect(onConfirm).toHaveBeenCalled();
-    });
-  });
-
-  it('handles the unregister state, choosing to delete', async () => {
-    const unregisterLocation = jest.fn();
-    const deleteEntity = jest.fn();
-    const onConfirm = jest.fn();
-
-    stateSpy.mockImplementation(() => ({
-      type: 'unregister',
-      location: 'url:http://example.com',
-      colocatedEntities: [
-        { kind: 'k1', namespace: 'ns1', name: 'n1' },
-        { kind: 'k2', namespace: 'ns2', name: 'n2' },
-      ],
-      unregisterLocation,
-      deleteEntity,
-    }));
-
-    await renderInTestApp(
-      <Wrapper>
-        <UnregisterEntityDialog
-          open
-          onClose={() => {}}
-          onConfirm={onConfirm}
-          entity={entity}
-        />
-      </Wrapper>,
-      {
-        mountedRoutes: {
-          '/catalog/:namespace/:kind/:name/*': entityRouteRef,
-        },
-      },
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/will unregister the following entities/),
-      ).toBeInTheDocument();
-      expect(screen.getByText(/ns1\/n1/)).toBeInTheDocument();
-      expect(screen.getByText(/ns2\/n2/)).toBeInTheDocument();
-    });
-
-    await userEvent.click(screen.getByText('Advanced Options'));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/You also have the option to delete/),
-      ).toBeInTheDocument();
-    });
-
-    await userEvent.click(screen.getByText('Delete Entity'));
-
-    await waitFor(() => {
-      expect(deleteEntity).toHaveBeenCalled();
-      expect(onConfirm).toHaveBeenCalled();
-      expect(alertApi.post).toHaveBeenCalledWith({
-        message: 'Removed entity n',
-        severity: 'success',
-        display: 'transient',
-      });
+      expect(deleteEntity).not.toHaveBeenCalled();
     });
   });
 });
