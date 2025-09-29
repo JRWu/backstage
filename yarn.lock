@@ -3647,6 +3647,7 @@ __metadata:
     react-router-dom: "npm:^6.3.0"
     react-use: "npm:^17.6.0"
     swagger-ui-react: "npm:^5.27.1"
+    yaml: "npm:^2.0.0"
   peerDependencies:
     "@types/react": ^17.0.0 || ^18.0.0
     react: ^17.0.0 || ^18.0.0

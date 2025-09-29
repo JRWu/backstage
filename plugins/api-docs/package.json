@@ -72,7 +72,8 @@
     "graphql-config": "^5.0.2",
     "graphql-ws": "^5.4.1",
     "react-use": "^17.6.0",
-    "swagger-ui-react": "^5.27.1"
+    "swagger-ui-react": "^5.27.1",
+    "yaml": "^2.0.0"
   },
   "devDependencies": {
     "@backstage/cli": "workspace:^",

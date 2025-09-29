@@ -66,6 +66,7 @@ export interface CatalogTableProps {
    */
   title?: string;
   subtitle?: string;
+  detailPanel?: TableProps<CatalogTableRow>['detailPanel'];
 }
 
 const refCompare = (a: Entity, b: Entity) => {
@@ -94,6 +95,7 @@ export const CatalogTable = (props: CatalogTableProps) => {
     tableOptions,
     subtitle,
     emptyContent,
+    detailPanel,
   } = props;
   const { isStarredEntity, toggleStarredEntity } = useStarredEntities();
   const entityListContext = useEntityList();
@@ -215,6 +217,7 @@ export const CatalogTable = (props: CatalogTableProps) => {
         data={entities.map(toEntityRow)}
         next={pageInfo?.next}
         prev={pageInfo?.prev}
+        detailPanel={detailPanel}
       />
     );
   } else if (paginationMode === 'offset') {
@@ -228,6 +231,7 @@ export const CatalogTable = (props: CatalogTableProps) => {
         subtitle={subtitle}
         options={options}
         data={entities.map(toEntityRow)}
+        detailPanel={detailPanel}
       />
     );
   }
@@ -251,6 +255,7 @@ export const CatalogTable = (props: CatalogTableProps) => {
       actions={actions}
       subtitle={subtitle}
       emptyContent={emptyContent}
+      detailPanel={detailPanel}
     />
   );
 };
