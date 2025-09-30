@@ -24,7 +24,7 @@ import {
 } from '@backstage/plugin-events-node';
 import contentType from 'content-type';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { defaultHttpBodyParsers } from './body-parser';
 import { RequestValidationContextImpl } from './validation';
 import { UnsupportedMediaTypeError } from './errors';

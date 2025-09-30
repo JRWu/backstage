@@ -26,7 +26,7 @@ import {
   HttpRouterService,
   PermissionsService,
 } from '@backstage/backend-plugin-api';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import type { Request } from 'express';
 
 import {

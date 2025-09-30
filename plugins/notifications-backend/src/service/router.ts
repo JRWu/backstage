@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
-import Router from 'express-promise-router';
+import express, { Request, Response, Router } from 'express';
 import {
   normalizeSeverity,
   NotificationGetOptions,

@@ -2,7 +2,7 @@ import { HttpAuthService } from '@backstage/backend-plugin-api';
 import { InputError } from '@backstage/errors';
 import { z } from 'zod';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { todoListServiceRef } from './services/TodoListService';
 
 export async function createRouter({

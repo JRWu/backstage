@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import express from 'express';
-import Router from 'express-promise-router';
+import express, { Router } from 'express';
 import { IncrementalIngestionDatabaseManager } from '../database/IncrementalIngestionDatabaseManager';
 import { LoggerService } from '@backstage/backend-plugin-api';
 

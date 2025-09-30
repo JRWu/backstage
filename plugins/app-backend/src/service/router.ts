@@ -22,7 +22,7 @@ import {
 import type { AppConfig } from '@backstage/config';
 import helmet from 'helmet';
 import express, { Request, Response } from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import fs from 'fs-extra';
 import { resolve as resolvePath } from 'path';
 import {

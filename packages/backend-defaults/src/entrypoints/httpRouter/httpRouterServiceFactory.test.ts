@@ -26,7 +26,7 @@ import {
   coreServices,
   createBackendPlugin,
 } from '@backstage/backend-plugin-api';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 
 describe('httpRouterFactory', () => {
   it('should register plugin paths', async () => {

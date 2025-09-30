@@ -28,7 +28,7 @@ import {
 } from '@backstage/plugin-kubernetes-common';
 import { getMockReq, getMockRes } from '@jest-mock/express';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { Server } from 'http';
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import PromiseRouter from 'express-promise-router';
 import { ApiRouter, TypedRouter } from './router';
 import { EndpointMap, RequiredDoc } from './types';
 import {
@@ -72,7 +71,7 @@ function createRouterWithValidation(
     middleware?: RequestHandler[];
   },
 ): Router {
-  const router = PromiseRouter();
+  const router = Router();
   router.use(options?.middleware || getDefaultRouterMiddleware());
 
   /**

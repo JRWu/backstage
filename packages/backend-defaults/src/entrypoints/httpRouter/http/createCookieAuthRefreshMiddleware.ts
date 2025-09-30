@@ -15,7 +15,7 @@
  */
 
 import { AuthService, HttpAuthService } from '@backstage/backend-plugin-api';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 
 const WELL_KNOWN_COOKIE_PATH_V1 = '/.backstage/auth/v1/cookie';
 

@@ -15,8 +15,7 @@
  */
 
 import { InputError } from '@backstage/errors';
-import express, { Request } from 'express';
-import Router from 'express-promise-router';
+import express, { Request, Router } from 'express';
 import { UserSettingsStore } from '../database/UserSettingsStore';
 import { SignalsService } from '@backstage/plugin-signals-node';
 import { UserSettingsSignal } from '@backstage/plugin-user-settings-common';

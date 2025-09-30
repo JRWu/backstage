@@ -20,7 +20,6 @@ import {
   LoggerService,
   PluginMetadataService,
 } from '@backstage/backend-plugin-api';
-import PromiseRouter from 'express-promise-router';
 import { Router, json } from 'express';
 import { z, AnyZodObject } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -61,7 +60,7 @@ export class DefaultActionsRegistryService implements ActionsRegistryService {
   }
 
   createRouter(): Router {
-    const router = PromiseRouter();
+    const router = Router();
     router.use(json());
 
     router.get('/.backstage/actions/v1/actions', (_, res) => {

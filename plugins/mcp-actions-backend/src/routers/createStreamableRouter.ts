@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import PromiseRouter from 'express-promise-router';
 import { Router } from 'express';
 import { McpService } from '../services/McpService';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -29,7 +28,7 @@ export const createStreamableRouter = ({
   logger: LoggerService;
   httpAuth: HttpAuthService;
 }): Router => {
-  const router = PromiseRouter();
+  const router = Router();
 
   router.post('/', async (req, res) => {
     try {

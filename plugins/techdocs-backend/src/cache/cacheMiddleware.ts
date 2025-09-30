@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import { Router } from 'express';
-import router from 'express-promise-router';
 import { TechDocsCache } from './TechDocsCache';
 import { LoggerService } from '@backstage/backend-plugin-api';
 
@@ -28,7 +27,7 @@ type ErrorCallback = (err?: Error) => void;
 export const createCacheMiddleware = ({
   cache,
 }: CacheMiddlewareOptions): Router => {
-  const cacheMiddleware = router();
+  const cacheMiddleware = Router();
 
   // Middleware that, through socket monkey patching, captures responses as
   // they're sent over /static/docs/* and caches them. Subsequent requests are
