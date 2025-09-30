@@ -23,6 +23,7 @@ import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Alert from '@material-ui/lab/Alert';
 import { CodeSnippet } from '@backstage/core-components';
+import yaml from 'js-yaml';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -114,8 +115,20 @@ export const ApiDiffWidget = ({ currentDefinition }: ApiDiffWidgetProps) => {
     setComparison(null);
 
     try {
-      const inputSpec = JSON.parse(inputJson);
-      const currentSpec = JSON.parse(currentDefinition);
+      let inputSpec: any;
+      let currentSpec: any;
+
+      try {
+        inputSpec = JSON.parse(inputJson);
+      } catch {
+        inputSpec = yaml.load(inputJson);
+      }
+
+      try {
+        currentSpec = JSON.parse(currentDefinition);
+      } catch {
+        currentSpec = yaml.load(currentDefinition);
+      }
 
       const summary = analyzeDiff(currentSpec, inputSpec);
 
@@ -125,8 +138,10 @@ export const ApiDiffWidget = ({ currentDefinition }: ApiDiffWidgetProps) => {
         summary,
       });
     } catch (err) {
-      if (err instanceof SyntaxError) {
-        setError('Invalid JSON format. Please check your input and try again.');
+      if (err instanceof yaml.YAMLException) {
+        setError(
+          'Invalid JSON/YAML format. Please check your input and try again.',
+        );
       } else {
         setError(
           `Error generating diff: ${
@@ -144,8 +159,8 @@ export const ApiDiffWidget = ({ currentDefinition }: ApiDiffWidgetProps) => {
           Compare with JSON Specification
         </Typography>
         <Typography variant="body2" color="textSecondary" paragraph>
-          Paste a raw JSON OpenAPI specification below to compare it with the
-          current API definition.
+          Paste a raw JSON or YAML OpenAPI specification below to compare it
+          with the current API definition.
         </Typography>
         <TextField
           fullWidth
