@@ -18,8 +18,16 @@ import { makeStyles } from '@material-ui/core/styles';
 import { useEffect, useState } from 'react';
 import SwaggerUI, { SwaggerUIProps } from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
+import FormControl from '@material-ui/core/FormControl';
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
 
 const useStyles = makeStyles(theme => ({
+  versionSelector: {
+    marginBottom: theme.spacing(2),
+    minWidth: 200,
+  },
   root: {
     '& .swagger-ui': {
       fontFamily: theme.typography.fontFamily,
@@ -177,34 +185,71 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+export type ApiVersion = {
+  version: string;
+  definition: string;
+};
+
 export type OpenApiDefinitionProps = {
   definition: string;
+  versions?: ApiVersion[];
 } & Omit<SwaggerUIProps, 'spec'>;
 
 export const OpenApiDefinition = ({
   definition,
+  versions,
   ...swaggerUiProps
 }: OpenApiDefinitionProps) => {
   const classes = useStyles();
+
+  const defaultVersion =
+    versions?.find(v => v.version === 'v1')?.version ||
+    versions?.[0]?.version ||
+    'v1';
+  const [selectedVersion, setSelectedVersion] = useState(defaultVersion);
+
+  const currentDefinition = versions
+    ? versions.find(v => v.version === selectedVersion)?.definition ||
+      definition
+    : definition;
 
   // Due to a bug in the swagger-ui-react component, the component needs
   // to be created without content first.
   const [def, setDef] = useState('');
 
   useEffect(() => {
-    const timer = setTimeout(() => setDef(definition), 0);
+    const timer = setTimeout(() => setDef(currentDefinition), 0);
     return () => clearTimeout(timer);
-  }, [definition, setDef]);
+  }, [currentDefinition, setDef]);
 
   return (
-    <div className={classes.root}>
-      <SwaggerUI
-        spec={def}
-        url=""
-        deepLinking
-        oauth2RedirectUrl={`${window.location.protocol}//${window.location.host}/oauth2-redirect.html`}
-        {...swaggerUiProps}
-      />
+    <div>
+      {versions && versions.length > 0 && (
+        <FormControl className={classes.versionSelector}>
+          <InputLabel id="api-version-select-label">Version</InputLabel>
+          <Select
+            labelId="api-version-select-label"
+            id="api-version-select"
+            value={selectedVersion}
+            onChange={event => setSelectedVersion(event.target.value as string)}
+          >
+            {versions.map(version => (
+              <MenuItem key={version.version} value={version.version}>
+                {version.version}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+      <div className={classes.root}>
+        <SwaggerUI
+          spec={def}
+          url=""
+          deepLinking
+          oauth2RedirectUrl={`${window.location.protocol}//${window.location.host}/oauth2-redirect.html`}
+          {...swaggerUiProps}
+        />
+      </div>
     </div>
   );
 };

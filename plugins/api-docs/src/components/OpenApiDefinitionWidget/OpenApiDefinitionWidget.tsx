@@ -26,8 +26,15 @@ const LazyOpenApiDefinition = lazy(() =>
 );
 
 /** @public */
+export type ApiVersion = {
+  version: string;
+  definition: string;
+};
+
+/** @public */
 export type OpenApiDefinitionWidgetProps = {
   definition: string;
+  versions?: ApiVersion[];
   requestInterceptor?: (req: any) => any | Promise<any>;
   supportedSubmitMethods?: string[];
 };
