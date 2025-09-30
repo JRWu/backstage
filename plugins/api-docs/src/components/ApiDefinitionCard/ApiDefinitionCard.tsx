@@ -22,6 +22,10 @@ import { PlainApiDefinitionWidget } from '../PlainApiDefinitionWidget';
 
 import { CardTab, TabbedCard } from '@backstage/core-components';
 import { useApi } from '@backstage/core-plugin-api';
+import {
+  OpenApiDefinitionWidget,
+  ApiVersion,
+} from '../OpenApiDefinitionWidget';
 
 /** @public */
 export const ApiDefinitionCard = () => {
@@ -36,11 +40,40 @@ export const ApiDefinitionCard = () => {
   const definitionWidget = getApiDefinitionWidget(entity);
   const entityTitle = entity.metadata.title ?? entity.metadata.name;
 
+  const parseVersions = (): ApiVersion[] | undefined => {
+    const versionAnnotation =
+      entity.metadata.annotations?.['backstage.io/api-versions'];
+    if (!versionAnnotation) {
+      return undefined;
+    }
+
+    try {
+      const versionsData = JSON.parse(versionAnnotation);
+      return Object.entries(versionsData).map(([version, definition]) => ({
+        version,
+        definition: definition as string,
+      }));
+    } catch (error) {
+      return undefined;
+    }
+  };
+
+  const versions = parseVersions();
+  const isOpenApiWithVersions =
+    entity.spec.type === 'openapi' && versions && versions.length > 0;
+
   if (definitionWidget) {
     return (
       <TabbedCard title={entityTitle}>
         <CardTab label={definitionWidget.title} key="widget">
-          {definitionWidget.component(entity.spec.definition)}
+          {isOpenApiWithVersions ? (
+            <OpenApiDefinitionWidget
+              definition={entity.spec.definition}
+              versions={versions}
+            />
+          ) : (
+            definitionWidget.component(entity.spec.definition)
+          )}
         </CardTab>
         <CardTab label="Raw" key="raw">
           <PlainApiDefinitionWidget

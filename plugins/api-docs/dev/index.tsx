@@ -32,6 +32,7 @@ import invalidLanguageApiEntity from './invalid-language-example-api.yaml';
 import openapiApiEntity from './openapi-example-api.yaml';
 import otherApiEntity from './other-example-api.yaml';
 import trpcApiEntity from './trpc-example-api.yaml';
+import versionedOpenapiApiEntity from './versioned-openapi-example-api.yaml';
 
 const mockEntities = [
   openapiApiEntity,
@@ -40,6 +41,7 @@ const mockEntities = [
   invalidLanguageApiEntity,
   otherApiEntity,
   trpcApiEntity,
+  versionedOpenapiApiEntity,
 ] as unknown as Entity[];
 
 createDevApp()
@@ -145,6 +147,19 @@ createDevApp()
         <Header title="tRPC" />
         <Content>
           <EntityProvider entity={trpcApiEntity as any as Entity}>
+            <EntityApiDefinitionCard />
+          </EntityProvider>
+        </Content>
+      </Page>
+    ),
+  })
+  .addPage({
+    title: 'Versioned OpenAPI',
+    element: (
+      <Page themeId="home">
+        <Header title="Versioned OpenAPI" />
+        <Content>
+          <EntityProvider entity={versionedOpenapiApiEntity as any as Entity}>
             <EntityApiDefinitionCard />
           </EntityProvider>
         </Content>
