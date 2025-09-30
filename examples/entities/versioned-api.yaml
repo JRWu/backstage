@@ -1,0 +1,53 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: versioned-petstore-api
+  description: Example OpenAPI with multiple versions
+  annotations:
+    api-docs.backstage.io/versions: |
+      {
+        "v1": "openapi: '3.0.0'\ninfo:\n  version: 1.0.0\n  title: Petstore API v1\n  description: Version 1 of the Petstore API\nservers:\n  - url: http://petstore.swagger.io/v1\npaths:\n  /pets:\n    get:\n      summary: List all pets\n      operationId: listPets\n      tags:\n        - pets\n      parameters:\n        - name: limit\n          in: query\n          description: How many items to return at one time (max 100)\n          required: false\n          schema:\n            type: integer\n            format: int32\n      responses:\n        '200':\n          description: A paged array of pets\n          content:\n            application/json:\n              schema:\n                type: array\n                items:\n                  type: object\n                  properties:\n                    id:\n                      type: integer\n                    name:\n                      type: string\n",
+        "v2": "openapi: '3.0.0'\ninfo:\n  version: 2.0.0\n  title: Petstore API v2\n  description: Version 2 of the Petstore API with enhanced features\nservers:\n  - url: http://petstore.swagger.io/v2\npaths:\n  /pets:\n    get:\n      summary: List all pets (v2 - enhanced)\n      operationId: listPetsV2\n      tags:\n        - pets\n      parameters:\n        - name: limit\n          in: query\n          description: How many items to return at one time (max 100)\n          required: false\n          schema:\n            type: integer\n            format: int32\n        - name: status\n          in: query\n          description: Filter by pet status\n          required: false\n          schema:\n            type: string\n            enum: [available, pending, sold]\n      responses:\n        '200':\n          description: A paged array of pets with status\n          content:\n            application/json:\n              schema:\n                type: array\n                items:\n                  type: object\n                  properties:\n                    id:\n                      type: integer\n                    name:\n                      type: string\n                    status:\n                      type: string\n"
+      }
+    api-docs.backstage.io/default-version: "v1"
+spec:
+  type: openapi
+  lifecycle: production
+  owner: team-a
+  definition: |
+    openapi: '3.0.0'
+    info:
+      version: 1.0.0
+      title: Petstore API v1
+      description: Version 1 of the Petstore API
+    servers:
+      - url: http://petstore.swagger.io/v1
+    paths:
+      /pets:
+        get:
+          summary: List all pets
+          operationId: listPets
+          tags:
+            - pets
+          parameters:
+            - name: limit
+              in: query
+              description: How many items to return at one time (max 100)
+              required: false
+              schema:
+                type: integer
+                format: int32
+          responses:
+            '200':
+              description: A paged array of pets
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
