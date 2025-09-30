@@ -20,13 +20,9 @@ import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
+import Grid from '@material-ui/core/Grid';
 import Alert from '@material-ui/lab/Alert';
 import { CodeSnippet } from '@backstage/core-components';
-import {
-  compareSpecs,
-  groupDiffsByEndpoint,
-  getOperationsChanged,
-} from '@useoptic/openapi-utilities';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -47,34 +43,86 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
   },
+  specColumn: {
+    height: '600px',
+    overflow: 'auto',
+  },
 }));
 
 export interface ApiDiffWidgetProps {
   currentDefinition: string;
 }
 
+interface DiffSummary {
+  added: string[];
+  removed: string[];
+  modified: string[];
+}
+
+const analyzeDiff = (
+  current: any,
+  input: any,
+  path: string = '',
+): DiffSummary => {
+  const summary: DiffSummary = { added: [], removed: [], modified: [] };
+
+  const currentKeys = new Set(Object.keys(current || {}));
+  const inputKeys = new Set(Object.keys(input || {}));
+
+  for (const key of inputKeys) {
+    const fullPath = path ? `${path}.${key}` : key;
+    if (!currentKeys.has(key)) {
+      summary.added.push(fullPath);
+    } else if (
+      typeof input[key] === 'object' &&
+      input[key] !== null &&
+      typeof current[key] === 'object' &&
+      current[key] !== null &&
+      !Array.isArray(input[key])
+    ) {
+      const nested = analyzeDiff(current[key], input[key], fullPath);
+      summary.added.push(...nested.added);
+      summary.removed.push(...nested.removed);
+      summary.modified.push(...nested.modified);
+    } else if (JSON.stringify(current[key]) !== JSON.stringify(input[key])) {
+      summary.modified.push(fullPath);
+    }
+  }
+
+  for (const key of currentKeys) {
+    if (!inputKeys.has(key)) {
+      const fullPath = path ? `${path}.${key}` : key;
+      summary.removed.push(fullPath);
+    }
+  }
+
+  return summary;
+};
+
 export const ApiDiffWidget = ({ currentDefinition }: ApiDiffWidgetProps) => {
   const classes = useStyles();
   const [inputJson, setInputJson] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [diffResult, setDiffResult] = useState<any>(null);
+  const [comparison, setComparison] = useState<{
+    current: any;
+    input: any;
+    summary: DiffSummary;
+  } | null>(null);
 
-  const handleGenerateDiff = async () => {
+  const handleGenerateDiff = () => {
     setError(null);
-    setDiffResult(null);
+    setComparison(null);
 
     try {
       const inputSpec = JSON.parse(inputJson);
       const currentSpec = JSON.parse(currentDefinition);
 
-      const comparison = await compareSpecs(currentSpec, inputSpec, {});
-      const groupedDiffs = groupDiffsByEndpoint(comparison);
-      const operationsChanged = getOperationsChanged(groupedDiffs);
+      const summary = analyzeDiff(currentSpec, inputSpec);
 
-      setDiffResult({
-        comparison,
-        groupedDiffs,
-        operationsChanged,
+      setComparison({
+        current: currentSpec,
+        input: inputSpec,
+        summary,
       });
     } catch (err) {
       if (err instanceof SyntaxError) {
@@ -121,7 +169,7 @@ export const ApiDiffWidget = ({ currentDefinition }: ApiDiffWidgetProps) => {
         </Button>
       </div>
 
-      {diffResult && (
+      {comparison && (
         <div className={classes.resultsSection}>
           <Typography variant="h6" gutterBottom>
             Comparison Results
@@ -129,47 +177,71 @@ export const ApiDiffWidget = ({ currentDefinition }: ApiDiffWidgetProps) => {
 
           <Box className={classes.summarySection}>
             <Typography variant="subtitle1" gutterBottom>
-              Operations Changed:
+              Changes Summary:
             </Typography>
-            {diffResult.operationsChanged.added.size > 0 && (
+            {comparison.summary.added.length > 0 && (
               <Typography variant="body2" color="primary">
-                ✅ Added:{' '}
-                {Array.from(diffResult.operationsChanged.added).join(', ')}
+                ✅ Added ({comparison.summary.added.length}):{' '}
+                {comparison.summary.added.slice(0, 5).join(', ')}
+                {comparison.summary.added.length > 5 && '...'}
               </Typography>
             )}
-            {diffResult.operationsChanged.changed.size > 0 && (
+            {comparison.summary.modified.length > 0 && (
               <Typography variant="body2" style={{ color: '#ff9800' }}>
-                ⚠️ Changed:{' '}
-                {Array.from(diffResult.operationsChanged.changed).join(', ')}
+                ⚠️ Modified ({comparison.summary.modified.length}):{' '}
+                {comparison.summary.modified.slice(0, 5).join(', ')}
+                {comparison.summary.modified.length > 5 && '...'}
               </Typography>
             )}
-            {diffResult.operationsChanged.removed.size > 0 && (
+            {comparison.summary.removed.length > 0 && (
               <Typography variant="body2" color="error">
-                ❌ Removed:{' '}
-                {Array.from(diffResult.operationsChanged.removed).join(', ')}
+                ❌ Removed ({comparison.summary.removed.length}):{' '}
+                {comparison.summary.removed.slice(0, 5).join(', ')}
+                {comparison.summary.removed.length > 5 && '...'}
               </Typography>
             )}
-            {diffResult.operationsChanged.added.size === 0 &&
-              diffResult.operationsChanged.changed.size === 0 &&
-              diffResult.operationsChanged.removed.size === 0 && (
+            {comparison.summary.added.length === 0 &&
+              comparison.summary.modified.length === 0 &&
+              comparison.summary.removed.length === 0 && (
                 <Typography variant="body2">
-                  No operation changes detected.
+                  No changes detected - specifications are identical.
                 </Typography>
               )}
           </Box>
 
           <Typography variant="subtitle1" gutterBottom>
-            Detailed Diff:
+            Side-by-Side Comparison:
           </Typography>
-          <CodeSnippet
-            text={JSON.stringify(diffResult.groupedDiffs, null, 2)}
-            language="json"
-            showCopyCodeButton
-          />
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Current Specification
+              </Typography>
+              <div className={classes.specColumn}>
+                <CodeSnippet
+                  text={JSON.stringify(comparison.current, null, 2)}
+                  language="json"
+                  showCopyCodeButton
+                />
+              </div>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Provided Specification
+              </Typography>
+              <div className={classes.specColumn}>
+                <CodeSnippet
+                  text={JSON.stringify(comparison.input, null, 2)}
+                  language="json"
+                  showCopyCodeButton
+                />
+              </div>
+            </Grid>
+          </Grid>
         </div>
       )}
 
-      {!diffResult && !error && inputJson.trim() && (
+      {!comparison && !error && inputJson.trim() && (
         <Alert severity="info">
           Click "Generate Diff" to compare the specifications.
         </Alert>
