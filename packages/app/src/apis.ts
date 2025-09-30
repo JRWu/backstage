@@ -33,6 +33,13 @@ import { DefaultScaffolderFormDecoratorsApi } from '@backstage/plugin-scaffolder
 import { mockDecorator } from './components/scaffolder/decorators';
 import { scaffolderApiRef } from '@backstage/plugin-scaffolder-react';
 import { ScaffolderClient } from '@backstage/plugin-scaffolder';
+import React from 'react';
+import { ApiEntity } from '@backstage/catalog-model';
+import {
+  apiDocsConfigRef,
+  defaultDefinitionWidgets,
+  OpenApiDefinitionWidgetWithVersions,
+} from '@backstage/plugin-api-docs';
 
 export const apis: AnyApiFactory[] = [
   createApiFactory({
@@ -71,6 +78,31 @@ export const apis: AnyApiFactory[] = [
       DefaultScaffolderFormDecoratorsApi.create({
         decorators: [mockDecorator],
       }),
+  }),
+
+  createApiFactory({
+    api: apiDocsConfigRef,
+    deps: {},
+    factory: () => {
+      const definitionWidgets = defaultDefinitionWidgets().map(widget => {
+        if (widget.type === 'openapi') {
+          return {
+            ...widget,
+            component: (definition: string) =>
+              React.createElement(OpenApiDefinitionWidgetWithVersions, {
+                definition,
+              }),
+          };
+        }
+        return widget;
+      });
+
+      return {
+        getApiDefinitionWidget: (apiEntity: ApiEntity) => {
+          return definitionWidgets.find(d => d.type === apiEntity.spec.type);
+        },
+      };
+    },
   }),
 
   ScmAuth.createDefaultApiFactory(),
