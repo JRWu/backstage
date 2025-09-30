@@ -29,6 +29,12 @@ const useStyles = makeStyles(theme => ({
   },
   versionSelector: {
     maxWidth: 300,
+    '& .MuiInputBase-root': {
+      borderRadius: theme.spacing(1),
+    },
+    '& .MuiOutlinedInput-root': {
+      borderRadius: theme.spacing(1),
+    },
   },
 }));
 
