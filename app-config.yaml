@@ -197,6 +197,9 @@ catalog:
       target: ../../plugins/scaffolder-backend/sample-templates/all-templates.yaml
       rules:
         - allow: [Template]
+    # Example API with multiple versions
+    - type: file
+      target: ../../plugins/api-docs/dev/versioned-openapi-example-api.yaml
 
 scaffolder:
   auditor:

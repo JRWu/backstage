@@ -33,6 +33,13 @@ import { DefaultScaffolderFormDecoratorsApi } from '@backstage/plugin-scaffolder
 import { mockDecorator } from './components/scaffolder/decorators';
 import { scaffolderApiRef } from '@backstage/plugin-scaffolder-react';
 import { ScaffolderClient } from '@backstage/plugin-scaffolder';
+import {
+  apiDocsConfigRef,
+  defaultDefinitionWidgets,
+} from '@backstage/plugin-api-docs';
+import { ApiEntity } from '@backstage/catalog-model';
+import { VersionedOpenApiWidget } from './components/api-docs';
+import { createElement } from 'react';
 
 export const apis: AnyApiFactory[] = [
   createApiFactory({
@@ -71,6 +78,32 @@ export const apis: AnyApiFactory[] = [
       DefaultScaffolderFormDecoratorsApi.create({
         decorators: [mockDecorator],
       }),
+  }),
+
+  createApiFactory({
+    api: apiDocsConfigRef,
+    deps: {},
+    factory: () => {
+      const definitionWidgets = defaultDefinitionWidgets();
+      return {
+        getApiDefinitionWidget: (apiEntity: ApiEntity) => {
+          if (apiEntity.spec.type === 'openapi') {
+            return {
+              type: 'openapi',
+              title: 'OpenAPI',
+              rawLanguage: 'yaml',
+              component: definition =>
+                createElement(VersionedOpenApiWidget, {
+                  definition,
+                  entity: apiEntity,
+                }),
+            };
+          }
+
+          return definitionWidgets.find(d => d.type === apiEntity.spec.type);
+        },
+      };
+    },
   }),
 
   ScmAuth.createDefaultApiFactory(),
