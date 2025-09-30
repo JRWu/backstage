@@ -27,7 +27,7 @@ import {
   HttpBodyParserOptions,
   HttpPostIngressOptions,
 } from '@backstage/plugin-events-node';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { HttpPostIngressEventPublisher } from './http';
 import { createEventBusRouter } from './hub';
 

@@ -18,7 +18,7 @@ import {
   createBackendPlugin,
 } from '@backstage/backend-plugin-api';
 import { json } from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { McpService } from './services/McpService';
 import { createStreamableRouter } from './routers/createStreamableRouter';
 import { createSseRouter } from './routers/createSseRouter';

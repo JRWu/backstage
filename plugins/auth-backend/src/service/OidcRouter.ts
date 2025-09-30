@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { OidcService } from './OidcService';
 import { AuthenticationError, isError } from '@backstage/errors';
 import {

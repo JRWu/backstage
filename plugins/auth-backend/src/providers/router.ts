@@ -23,7 +23,7 @@ import {
 } from '@backstage/plugin-auth-node';
 import { CatalogService } from '@backstage/plugin-catalog-node';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { Minimatch } from 'minimatch';
 import { CatalogAuthResolverContext } from '../lib/resolvers/CatalogAuthResolverContext';
 import { TokenIssuer } from '../identity/types';

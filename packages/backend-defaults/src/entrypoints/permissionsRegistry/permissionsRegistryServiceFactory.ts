@@ -24,7 +24,7 @@ import {
   createPermissionIntegrationRouter,
 } from '@backstage/plugin-permission-node';
 import { NotAllowedError } from '@backstage/errors';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 
 function assertRefPluginId(ref: PermissionResourceRef, pluginId: string) {
   if (ref.pluginId !== pluginId) {

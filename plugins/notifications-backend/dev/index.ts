@@ -24,8 +24,7 @@ import {
   notificationSeverities,
   NotificationSeverity,
 } from '@backstage/plugin-notifications-common';
-import express, { Response } from 'express';
-import Router from 'express-promise-router';
+import express, { Response, Router } from 'express';
 
 const randomSeverity = (): NotificationSeverity => {
   return notificationSeverities[

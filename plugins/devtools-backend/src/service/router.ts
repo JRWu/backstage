@@ -22,7 +22,7 @@ import {
 } from '@backstage/plugin-devtools-common';
 import { DevToolsBackendApi } from '../api';
 import { NotAllowedError } from '@backstage/errors';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import express from 'express';
 import {
   DiscoveryService,

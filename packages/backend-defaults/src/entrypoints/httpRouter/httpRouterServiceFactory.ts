@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { Handler } from 'express';
-import PromiseRouter from 'express-promise-router';
+import { Handler, Router } from 'express';
 import {
   coreServices,
   createServiceFactory,
@@ -60,7 +59,7 @@ export const httpRouterServiceFactory = createServiceFactory({
     lifecycle,
     logger,
   }) {
-    const router = PromiseRouter();
+    const router = Router();
 
     router.use(createRateLimitMiddleware({ pluginId: plugin.getId(), config }));
 
@@ -76,7 +75,7 @@ export const httpRouterServiceFactory = createServiceFactory({
     router.use(credentialsBarrier.middleware);
     router.use(createCookieAuthRefreshMiddleware({ auth, httpAuth }));
 
-    const pluginRoutes = PromiseRouter();
+    const pluginRoutes = Router();
     router.use(pluginRoutes);
 
     const middleware = MiddlewareFactory.create({ config, logger });

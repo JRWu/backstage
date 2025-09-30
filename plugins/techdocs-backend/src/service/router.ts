@@ -25,8 +25,7 @@ import {
   PreparerBuilder,
   PublisherBase,
 } from '@backstage/plugin-techdocs-node';
-import express, { Response } from 'express';
-import Router from 'express-promise-router';
+import express, { Response, Router } from 'express';
 import { Knex } from 'knex';
 import { ScmIntegrations } from '@backstage/integration';
 import { DocsSynchronizer, DocsSynchronizerSyncOpts } from './DocsSynchronizer';

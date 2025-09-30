@@ -18,7 +18,7 @@ import { ConfigReader } from '@backstage/config';
 import express from 'express';
 import request, { SuperAgentTest } from 'supertest';
 import cookieParser from 'cookie-parser';
-import PromiseRouter from 'express-promise-router';
+import { Router } from 'express';
 import { AuthProviderRouteHandlers, AuthResolverContext } from '../types';
 import { createOAuthRouteHandlers } from './createOAuthRouteHandlers';
 import { OAuthAuthenticator } from './types';
@@ -70,7 +70,7 @@ function wrapInApp(handlers: AuthProviderRouteHandlers) {
   });
   const app = express();
 
-  const router = PromiseRouter();
+  const router = Router();
 
   router.use(cookieParser());
   app.use('/my-provider', router);

@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import express from 'express';
-import Router from 'express-promise-router';
+import express, { Router } from 'express';
 import { add, getAll, update } from './todos';
 import { InputError } from '@backstage/errors';
 import { HttpAuthService, LoggerService } from '@backstage/backend-plugin-api';

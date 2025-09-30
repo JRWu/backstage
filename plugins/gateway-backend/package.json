@@ -37,7 +37,7 @@
     "@backstage/backend-plugin-api": "workspace:^",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/core": "^1.29.0",
-    "express": "^4.17.1",
+    "express": "^4.21.2",
     "http-proxy-middleware": "^3.0.3"
   },
   "devDependencies": {
@@ -45,7 +45,7 @@
     "@backstage/backend-defaults": "workspace:^",
     "@backstage/backend-test-utils": "workspace:^",
     "@backstage/cli": "workspace:^",
-    "@types/express": "^4.17.6",
+    "@types/express": "^4.17.21",
     "eventsource": "^3.0.6",
     "wait-for-expect": "^3.0.2"
   }

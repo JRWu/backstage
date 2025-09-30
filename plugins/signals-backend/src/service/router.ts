@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import express, { NextFunction, Request, Response } from 'express';
-import Router from 'express-promise-router';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import {
   AuthService,
   BackstageUserInfo,

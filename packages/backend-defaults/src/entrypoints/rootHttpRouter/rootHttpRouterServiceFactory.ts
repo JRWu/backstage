@@ -116,6 +116,7 @@ const rootHttpRouterServiceFactoryWithOptions = (
           }
           if (trustProxy !== undefined) {
             app.set('trust proxy', trustProxy);
+            app.set('query parser', 'extended');
           }
 
           // Apply server-level HTTP options from config

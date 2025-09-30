@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import type express from 'express';
-import Router from 'express-promise-router';
+import express, { Router } from 'express';
 import {
   createProxyMiddleware,
   fixRequestBody,

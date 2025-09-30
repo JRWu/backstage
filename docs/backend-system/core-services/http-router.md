@@ -158,7 +158,7 @@ backend.add(
       rootHttpRouter,
       lifecycle,
     }) {
-      const router = PromiseRouter();
+      const router = Router();
 
       // Optional rate limiting middleware
       router.use(

@@ -28,7 +28,7 @@ import { Counter, Histogram, Gauge, metrics, trace } from '@opentelemetry/api';
 import { Knex } from 'knex';
 import { Duration } from 'luxon';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import { LocalTaskWorker } from './LocalTaskWorker';
 import { TaskWorker } from './TaskWorker';
 import { TaskSettingsV2, TaskApiTasksResponse } from './types';

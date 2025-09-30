@@ -17,7 +17,7 @@
 import { ConfigReader } from '@backstage/config';
 import { TestEventsService } from '@backstage/plugin-events-backend-test-utils';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import request from 'supertest';
 import { HttpPostIngressEventPublisher } from './HttpPostIngressEventPublisher';
 import { mockServices } from '@backstage/backend-test-utils';

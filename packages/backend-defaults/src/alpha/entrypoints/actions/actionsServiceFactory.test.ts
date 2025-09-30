@@ -30,7 +30,7 @@ import {
   createBackendPlugin,
 } from '@backstage/backend-plugin-api';
 import { json } from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 import request from 'supertest';
 import { ActionsServiceAction } from '@backstage/backend-plugin-api/alpha';
 import { actionsRegistryServiceRef } from '@backstage/backend-plugin-api/alpha';

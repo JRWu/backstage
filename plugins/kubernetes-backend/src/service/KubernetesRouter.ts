@@ -24,7 +24,7 @@ import {
 import { PermissionEvaluator } from '@backstage/plugin-permission-common';
 import { createPermissionIntegrationRouter } from '@backstage/plugin-permission-node';
 import express from 'express';
-import Router from 'express-promise-router';
+import { Router } from 'express';
 
 import { DispatchStrategy } from '../auth';
 

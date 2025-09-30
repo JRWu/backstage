@@ -18,8 +18,7 @@ import {
   RootConfigService,
   RootHealthService,
 } from '@backstage/backend-plugin-api';
-import Router from 'express-promise-router';
-import { Request, Response } from 'express';
+import { Router, Request, Response } from 'express';
 
 const HEADER_CONFIG_KEY = 'backend.health.headers';
 

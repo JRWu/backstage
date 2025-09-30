@@ -15,8 +15,7 @@
  */
 
 import { z } from 'zod';
-import express, { Request, Response } from 'express';
-import Router from 'express-promise-router';
+import express, { Request, Response, Router } from 'express';
 import { InputError } from '@backstage/errors';
 import { IdentityApi } from '@backstage/plugin-auth-node';
 import {
